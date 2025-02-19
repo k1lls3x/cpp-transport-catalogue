@@ -78,6 +78,14 @@ namespace command {
     }
 
 }  
+void  InputReader::ProcessCommands(std::istream& input, transport::TransportCatalogue& catalogue) {
+    std::string line;
+    while (std::getline(input, line)) {
+        ParseLine(line);
+    }
+    ApplyCommands(catalogue);
+
+}
 
 void InputReader::ParseLine(std::string_view line) {
     auto command_description = command::ParseCommandDescription(line);

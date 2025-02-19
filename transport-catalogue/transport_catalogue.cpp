@@ -24,20 +24,22 @@ namespace transport {
     }
 
     const Stop* TransportCatalogue::FindStop(std::string_view name) const {
-        if (auto it = stop_name_to_stop_.find(name); it != stop_name_to_stop_.end()) {
-            return it->second;
+        auto it = stop_name_to_stop_.find(name);
+        if (it == stop_name_to_stop_.end()) {
+            throw std::runtime_error("Stop not found: " + std::string(name));
         }
-        return nullptr;
+        return it->second;
     }
-
+    
     const Bus* TransportCatalogue::FindBus(std::string_view name) const {
-        if (auto it = bus_name_to_bus_.find(name); it != bus_name_to_bus_.end()) {
-            return it->second;
+        auto it = bus_name_to_bus_.find(name);
+        if (it == bus_name_to_bus_.end()) {
+            throw std::runtime_error("Bus not found: " + std::string(name));
         }
-        return nullptr;
+        return it->second;
     }
 
-    TransportCatalogue::BusInfo TransportCatalogue::GetBusInfo(std::string_view name) const {
+    transport ::BusInfo TransportCatalogue::GetBusInfo(std::string_view name) const {
         BusInfo info;
         auto it = bus_name_to_bus_.find(name);
         if (it == bus_name_to_bus_.end()) return info;

@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
+#include <iostream>
 #include "geo.h"
 #include "transport_catalogue.h"
 namespace input {
@@ -26,11 +26,12 @@ namespace input {
 
     class InputReader {
     public:
-       
-        void ParseLine(std::string_view line);
-        void ApplyCommands(transport::TransportCatalogue& catalogue) const;
+        void ProcessCommands(std::istream& input, transport::TransportCatalogue& catalogue);
+    
 
     private:
         std::vector<CommandDescription> commands_;
+        void ParseLine(std::string_view line);
+        void ApplyCommands(transport::TransportCatalogue& catalogue) const;
     };
 }

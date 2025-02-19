@@ -1,4 +1,4 @@
-//main.cpp
+// main.cpp
 #include <iostream>
 #include <string>
 
@@ -15,12 +15,7 @@ int main() {
 
     {
         input::InputReader reader;
-        for (int i = 0; i < base_request_count; ++i) {
-            string line;
-            getline(cin, line);
-            reader.ParseLine(line);
-        }
-        reader.ApplyCommands(catalogue);
+        reader.ProcessCommands(cin, catalogue);
     }
 
     int stat_request_count;
