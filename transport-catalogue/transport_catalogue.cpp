@@ -22,7 +22,9 @@ namespace transport {
         const auto& inserted_bus = buses_.back();
         bus_name_to_bus_[inserted_bus.name] = &inserted_bus;
     }
-
+    void TransportCatalogue::SetDistance(const Stop* from, const Stop* to, int distance){
+        distance_[{from,to}] = distance;
+    }
     const Stop* TransportCatalogue::FindStop(std::string_view name) const {
         auto it = stop_name_to_stop_.find(name);
         if (it == stop_name_to_stop_.end()) {
@@ -30,7 +32,13 @@ namespace transport {
         }
         return it->second;
     }
-    
+    int TransportCatalogue::GetDistance(const Stop* from , const Stop* to) const{
+        auto it_from = distance_.find({from,to});
+        if (it_from != distance_.end()) return it_from -> second;
+        auto it_to = distance_.find({to,from});
+        if (it_to != distance_.end()) return it_to -> second;
+        return 0;
+    }
     const Bus* TransportCatalogue::FindBus(std::string_view name) const {
         auto it = bus_name_to_bus_.find(name);
         if (it == bus_name_to_bus_.end()) {
@@ -39,7 +47,7 @@ namespace transport {
         return it->second;
     }
 
-    transport ::BusInfo TransportCatalogue::GetBusInfo(std::string_view name) const {
+    transport::BusInfo TransportCatalogue::GetBusInfo(std::string_view name) const {
         BusInfo info;
         auto it = bus_name_to_bus_.find(name);
         if (it == bus_name_to_bus_.end()) return info;
@@ -50,12 +58,16 @@ namespace transport {
         std::unordered_set<const Stop*> unique_stops(bus->stops.begin(), bus->stops.end());
         info.unique_stops = unique_stops.size();
 
+        double geo_route_lenght = 0.0;
+        info.route_length = 0.0;
         for (size_t i = 1; i < bus->stops.size(); ++i) {
-            info.route_length += ComputeDistance(
-                bus->stops[i-1]->coordinates, bus->stops[i]->coordinates
-            );
-        }
+            const Stop* from = bus -> stops[i-1];
+            const Stop* to = bus -> stops[i];
 
+            info.route_length+=GetDistance(from,to);
+            geo_route_lenght+=ComputeDistance(from-> coordinates, to-> coordinates);
+        }
+        info.curvature = (geo_route_lenght == 0) ? 0.0 : info.route_length  / geo_route_lenght;
         info.exists = true;
         return info;
     }

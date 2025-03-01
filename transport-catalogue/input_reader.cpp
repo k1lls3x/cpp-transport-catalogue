@@ -93,12 +93,39 @@ void InputReader::ParseLine(std::string_view line) {
         commands_.push_back(std::move(command_description));
     }
 }
+std::vector<std::pair<int, std::string>> ParseDistances(std::string_view input){
+    std::vector<std::pair<int, std::string>> distances;
+     size_t pos = input.find(',');
+     while (pos !=std::string::npos){
+        size_t next_pos = input.find(',' , pos+ 1);
+        std::string_view segment = input.substr(pos+1, next_pos - pos -1);
+        segment = parsing::Trim(segment);
+
+        size_t m_pos = segment.find("m to ");
+        if(m_pos == std::string::npos){
+            int distance = std::stoi(std::string(segment.substr(0,m_pos)));
+            std::string stop_name = std::string(segment.substr(m_pos + 5));
+            distances.emplace_back(distance,stop_name);
+        }
+        pos = next_pos;
+     }
+     return distances;
+}
 
 void InputReader::ApplyCommands(transport::TransportCatalogue& catalogue) const {
     for (const auto& cmd : commands_) {
         if (cmd.command == "Stop") {
             auto coords = parsing::ParseCoordinates(cmd.description);
             catalogue.AddStop(cmd.id, coords);
+            auto stop_ptr = catalogue.FindStop(cmd.id);
+            auto distances =  input::ParseDistances(cmd.description);
+           
+            for (const auto& [distance, stop_name] : distances) {
+                auto other_stop = catalogue.FindStop(stop_name);
+                if (other_stop) {
+                    catalogue.SetDistance(stop_ptr, other_stop, distance);
+                }
+            }
         }
     }
     for (const auto& cmd : commands_) {

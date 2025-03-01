@@ -9,6 +9,8 @@
 namespace input {
     namespace parsing{
         std::string_view Trim(std::string_view string);
+        std::vector<std::pair<int, std::string>> ParseDistances(std::string_view input);
+
     }
     struct CommandDescription {
         explicit operator bool() const {
@@ -33,5 +35,6 @@ namespace input {
         std::vector<CommandDescription> commands_;
         void ParseLine(std::string_view line);
         void ApplyCommands(transport::TransportCatalogue& catalogue) const;
+
     };
 }

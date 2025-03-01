@@ -29,7 +29,8 @@ void ParseAndPrintStat(const transport::TransportCatalogue& catalogue,
             output << "Bus " << name << ": "
                    << info.total_stops << " stops on route, "
                    << info.unique_stops << " unique stops, "
-                   << std::fixed << std::setprecision(6) << info.route_length << " route length\n";
+                   << std::fixed << std::setprecision(6) << info.route_length << " route length"
+                   <<info.curvature << " curvature\n";
         }
     } else if (command == "Stop") {
         const transport::Stop* stop = catalogue.FindStop(name);
