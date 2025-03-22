@@ -17,6 +17,7 @@ namespace transport {
     struct Bus {
         std::string name;
         std::vector<const Stop*> stops;
+        bool is_roundtrip = false;
     };
     struct BusInfo {
         int total_stops = 0;
@@ -35,13 +36,14 @@ namespace transport {
     class TransportCatalogue {
     public:
         void AddStop(std::string name, geo::Coordinates coordinates);
-        void AddBus(std::string name, const std::vector<std::string>& stop_names);
+        void AddBus(std::string name, const std::vector<std::string>& stop_names, bool is_roundtrip);
         void SetDistance(const Stop* from, const Stop*  to, int distance);
         const Stop* FindStop(std::string_view name) const;
         const Bus* FindBus(std::string_view name) const;
         std::set<std::string> GetBusesForStop(std::string_view stop_name) const ;
         BusInfo GetBusInfo(std::string_view name) const;
         int GetDistance(const Stop* from , const Stop* to) const;
+        std::vector<const Bus*> GetAllBuses() const;
     private:
         std::deque<Stop> stops_;
         std::deque<Bus> buses_;

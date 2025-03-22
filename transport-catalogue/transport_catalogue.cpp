@@ -1,4 +1,5 @@
 #include "transport_catalogue.h"
+//transport_catalogue.h
 namespace transport {
     void TransportCatalogue::AddStop(std::string name, geo::Coordinates coordinates) {
         stops_.push_back({std::move(name), coordinates});
@@ -6,10 +7,11 @@ namespace transport {
         stop_name_to_stop_[stop.name] = &stop;
     }
 
-    void TransportCatalogue::AddBus(std::string name, const std::vector<std::string>& stop_names) {
+    void TransportCatalogue::AddBus(std::string name,const std::vector<std::string>& stop_names,bool is_roundtrip) {
         Bus bus;
         bus.name = std::move(name);
-
+        bus.is_roundtrip = is_roundtrip;
+        
         for (const auto& stop_name : stop_names) {
             if (auto it = stop_name_to_stop_.find(stop_name); it != stop_name_to_stop_.end()) {
                 bus.stops.push_back(it->second);
@@ -27,10 +29,7 @@ namespace transport {
     }
     const Stop* TransportCatalogue::FindStop(std::string_view name) const {
         auto it = stop_name_to_stop_.find(name);
-        if (it == stop_name_to_stop_.end()) {
-            throw std::runtime_error("Stop not found: " + std::string(name));
-        }
-        return it->second;
+        return it != stop_name_to_stop_.end() ? it->second : nullptr;
     }
     int TransportCatalogue::GetDistance(const Stop* from , const Stop* to) const{
         auto it_from = distance_.find({from,to});
@@ -41,10 +40,7 @@ namespace transport {
     }
     const Bus* TransportCatalogue::FindBus(std::string_view name) const {
         auto it = bus_name_to_bus_.find(name);
-        if (it == bus_name_to_bus_.end()) {
-            throw std::runtime_error("Bus not found: " + std::string(name));
-        }
-        return it->second;
+        return it != bus_name_to_bus_.end() ? it->second : nullptr;
     }
 
     transport::BusInfo TransportCatalogue::GetBusInfo(std::string_view name) const {
@@ -70,6 +66,14 @@ namespace transport {
         info.curvature = (geo_route_lenght == 0) ? 0.0 : info.route_length  / geo_route_lenght;
         info.exists = true;
         return info;
+    }
+    std::vector<const Bus*> TransportCatalogue::GetAllBuses() const {
+        std::vector<const Bus*> result;
+        result.reserve(buses_.size());
+        for (const Bus& bus : buses_) {
+            result.push_back(&bus);
+        }
+        return result;
     }
 
     std::set<std::string> TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {

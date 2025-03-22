@@ -1,28 +1,27 @@
-// main.cpp
-#include <iostream>
-#include <string>
-
-#include "input_reader.h"
-#include "stat_reader.h"
-
-using namespace std;
+#include "json.h"
+#include "transport_catalogue.h"
+#include "json_reader.h"
+#include "map_renderer.h"
 
 int main() {
+    using namespace std;
+
+    const json::Document doc = json::Load(cin);
+
     transport::TransportCatalogue catalogue;
+    input::ReadBaseRequests(doc, catalogue);
 
-    int base_request_count;
-    cin >> base_request_count >> ws;
-
-    {
-        input::InputReader reader;
-        reader.ProcessCommands(cin, catalogue);
+    const auto& root_map = doc.GetRoot().AsMap();
+    render::RenderSettings settings;
+    auto rs_it = root_map.find("render_settings");
+    if (rs_it != root_map.end() && rs_it->second.IsMap()) {
+        settings = render_config::ParseRenderSettings(rs_it->second.AsMap());
     }
 
-    int stat_request_count;
-    cin >> stat_request_count >> ws;
-    for (int i = 0; i < stat_request_count; ++i) {
-        string line;
-        getline(cin, line);
-        ParseAndPrintStat(catalogue, line, cout);
-    }
+    render::MapRenderer renderer{settings};
+
+    // ✅ Вместо прямого вывода SVG — вывод JSON-ответов
+    output::ReadStatRequests(doc, catalogue, renderer);
+
+    return 0;
 }
