@@ -8,20 +8,19 @@ int main() {
 
     const json::Document doc = json::Load(cin);
 
-    transport::TransportCatalogue catalogue;
-    input::ReadBaseRequests(doc, catalogue);
+    transport::TransportCatalogue catalogue = input::ReadTransportCatalogue(doc);
 
     const auto& root_map = doc.GetRoot().AsMap();
     render::RenderSettings settings;
-    auto rs_it = root_map.find("render_settings");
-    if (rs_it != root_map.end() && rs_it->second.IsMap()) {
+    if (auto rs_it = root_map.find("render_settings");
+        rs_it != root_map.end() && rs_it->second.IsMap()) {
         settings = render_config::ParseRenderSettings(rs_it->second.AsMap());
     }
 
-    render::MapRenderer renderer{settings};
+    render::MapRenderer renderer(settings); // ← вот это добавь
 
-    // ✅ Вместо прямого вывода SVG — вывод JSON-ответов
-    output::ReadStatRequests(doc, catalogue, renderer);
+    const auto stat = output::ReadStatRequests(doc, catalogue, renderer);
+    json::Print(json::Document(json::Node(std::move(stat.responses))), std::cout);
 
     return 0;
 }

@@ -5,13 +5,14 @@
 using namespace std::literals;
 namespace input {
 
-void ReadBaseRequests(const json::Document& doc, transport::TransportCatalogue& catalogue) {
+  transport::TransportCatalogue ReadTransportCatalogue(const json::Document& doc){
+    transport::TransportCatalogue catalogue;
     const auto& root = doc.GetRoot().AsMap();
     std::vector<std::tuple<std::string, std::string, int>> temp_distances;
 
     auto base_requests_it = root.find("base_requests");
     if (base_requests_it == root.end() || !base_requests_it->second.IsArray()) {
-        return;
+        return catalogue;
     }
 
     const auto& base_requests = base_requests_it->second.AsArray();
@@ -101,6 +102,7 @@ void ReadBaseRequests(const json::Document& doc, transport::TransportCatalogue& 
             catalogue.SetDistance(from, to, dist);
         }
     }
+      return catalogue;
 }
 
 
@@ -181,15 +183,14 @@ namespace render_config
 
 namespace output {
 
-void ReadStatRequests(const json::Document& doc, transport::TransportCatalogue& catalogue,const render::MapRenderer& renderer) {
+StatResponse ReadStatRequests(const json::Document& doc, const transport::TransportCatalogue& catalogue,const render::MapRenderer& renderer) {
     const auto& root = doc.GetRoot().AsMap();
     json::Array responses;
 
     auto stat_requests_it = root.find("stat_requests");
     if (stat_requests_it == root.end() || !stat_requests_it->second.IsArray()) {
         // Нет stat_requests
-        json::Print(json::Document(json::Node(responses)), std::cout);
-        return;
+     return  StatResponse{std::move(responses)};
     }
 
     for (const auto& request : stat_requests_it->second.AsArray()) {
@@ -278,8 +279,10 @@ void ReadStatRequests(const json::Document& doc, transport::TransportCatalogue& 
     }
     }
 
-    // Выводим массив ответов
-   json::Print(json::Document(json::Node(std::move(responses))), std::cout);
+     return StatResponse{std::move(responses)};
+ 
 }
 
 } // namespace output
+
+

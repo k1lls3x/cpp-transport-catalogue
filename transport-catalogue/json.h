@@ -19,12 +19,14 @@ class ParsingError : public std::runtime_error {
 public:
     using runtime_error::runtime_error;
 };
-
-class Node {
+using NodeValue = std::variant<std::nullptr_t, int, double, bool, std::string, Array, Dict>;
+class Node : public NodeValue {
 public:
-    using NodeValue = std::variant<std::nullptr_t, int, double, bool, std::string, Array, Dict>;
+    
+    using NodeValue::variant;
+    using NodeValue::operator=;
 
-    Node() : value_(nullptr) {}
+    Node() : NodeValue(nullptr) {}
     explicit Node(Array array);
     explicit Node(Dict map);
     explicit Node(int value);
@@ -52,8 +54,7 @@ public:
     bool operator==(const Node& other) const;
     bool operator!=(const Node& other) const;
 
-private:
-    NodeValue value_;
+    
 };
 
 class Document {

@@ -4,17 +4,23 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 
+
 namespace input {
     
-    void ReadBaseRequests(const json::Document& doc, transport::TransportCatalogue& catalogue);
+    transport::TransportCatalogue ReadTransportCatalogue(const json::Document& doc);
   
 }// namespace input
 
 namespace output {
+    struct StatResponse
+    {
+        std::vector<json::Node> responses;
+    };
     
-   void ReadStatRequests(const json::Document& doc,
-                      transport::TransportCatalogue& catalogue,
-                      const render::MapRenderer& renderer);
+    
+    StatResponse ReadStatRequests(const json::Document& doc,
+                              const transport::TransportCatalogue& catalogue,
+                              const render::MapRenderer& renderer);
 }// namespace output
 
 namespace render_config {
@@ -23,32 +29,25 @@ namespace render_config {
     
     svg::Color ParseColor(const json::Node& node);
 
-template <typename T>
-std::optional<T> GetIf(const json::Dict& dict, const std::string& key) {
-    auto it = dict.find(key);
-    if (it != dict.end()) {
-        try {
-            if constexpr (std::is_same_v<T, double>) {
-                if (it->second.IsDouble()) {
-                    return it->second.AsDouble();
-                }
-            } else if constexpr (std::is_same_v<T, int>) {
-                if (it->second.IsInt()) {
-                    return it->second.AsInt();
-                }
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                if (it->second.IsString()) {
-                    return it->second.AsString();
-                }
-            } else if constexpr (std::is_same_v<T, bool>) {
-                if (it->second.IsBool()) {
-                    return it->second.AsBool();
-                }
+    template <typename T>
+    std::optional<T> GetIf(const json::Dict& dict, const std::string& key) {
+        auto it = dict.find(key);
+        if (it == dict.end()) return std::nullopt;
+
+        const auto& node = it -> second;
+        return std::visit([](const auto& value) -> std::optional<T>{
+            using U = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<U,T>){
+                return value;
             }
-        } catch (...) {
-            std::cerr << "Something went wrong\n"; 
-        }
-    }
-    return std::nullopt;
-}   
+            else if constexpr (std::is_same_v<U,int> && std::is_same_v<T,double>)
+            {
+                return static_cast<double>(value);
+            }else{
+                return std::nullopt;
+            }
+            
+        }, static_cast<const json::NodeValue&>(node));
+                
+    }    
 }// namespace render_config
