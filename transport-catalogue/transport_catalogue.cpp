@@ -1,21 +1,21 @@
 #include "transport_catalogue.h"
 //transport_catalogue.h
 namespace transport {
-    void TransportCatalogue::AddStop(std::string name, geo::Coordinates coordinates) {
-        stops_.push_back({std::move(name), coordinates});
+    void TransportCatalogue::AddStop(const std::string& name, geo::Coordinates coordinates) {
+        stops_.push_back({name, coordinates});
         const auto& stop = stops_.back();
         stop_name_to_stop_[stop.name] = &stop;
     }
 
-    void TransportCatalogue::AddBus(std::string name,const std::vector<std::string>& stop_names,bool is_roundtrip) {
+    void TransportCatalogue::AddBus(const std::string& name,const std::vector<std::string>& stop_names,bool is_roundtrip) {
         Bus bus;
-        bus.name = std::move(name);
+        bus.name = name;
         bus.is_roundtrip = is_roundtrip;
-        
+
         for (const auto& stop_name : stop_names) {
             if (auto it = stop_name_to_stop_.find(stop_name); it != stop_name_to_stop_.end()) {
                 bus.stops.push_back(it->second);
-                
+
                 stop_to_buses_[it->second].insert(bus.name);
             }
         }
@@ -67,25 +67,25 @@ namespace transport {
         info.exists = true;
         return info;
     }
-    std::vector<const Bus*> TransportCatalogue::GetAllBuses() const {
-        std::vector<const Bus*> result;
-        result.reserve(buses_.size());
+    std::deque<const Bus*> TransportCatalogue::GetAllBuses() const {
+        std::deque<const Bus*> result;
         for (const Bus& bus : buses_) {
             result.push_back(&bus);
         }
         return result;
     }
 
-    std::set<std::string> TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {
+   const std::set<std::string>& TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {
         const Stop* stop = FindStop(stop_name);
+        static const std::set<std::string> empty_result;
         if (!stop) {
-            return {};
+            return empty_result;
         }
 
         if (auto it = stop_to_buses_.find(stop); it != stop_to_buses_.end()) {
             return it->second;
         }
 
-        return {};
+        return empty_result;
     }
 }

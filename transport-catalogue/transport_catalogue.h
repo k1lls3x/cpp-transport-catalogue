@@ -35,15 +35,15 @@ namespace transport {
 
     class TransportCatalogue {
     public:
-        void AddStop(std::string name, geo::Coordinates coordinates);
-        void AddBus(std::string name, const std::vector<std::string>& stop_names, bool is_roundtrip);
+        void AddStop(const std::string& name, geo::Coordinates coordinates);
+        void AddBus(const std::string& name, const std::vector<std::string>& stop_names, bool is_roundtrip);
         void SetDistance(const Stop* from, const Stop*  to, int distance);
         const Stop* FindStop(std::string_view name) const;
         const Bus* FindBus(std::string_view name) const;
-        std::set<std::string> GetBusesForStop(std::string_view stop_name) const ;
+       const std::set<std::string>& GetBusesForStop(std::string_view stop_name) const ;
         BusInfo GetBusInfo(std::string_view name) const;
         int GetDistance(const Stop* from , const Stop* to) const;
-        std::vector<const Bus*> GetAllBuses() const;
+        std::deque<const Bus*> GetAllBuses() const;
     private:
         std::deque<Stop> stops_;
         std::deque<Bus> buses_;
