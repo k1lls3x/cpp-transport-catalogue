@@ -1,9 +1,10 @@
 #pragma once
-
+//json_reader.h
 #include "json.h"
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "json_builder.h"
+#include "transport_router.h"
 
 namespace input {
 
@@ -16,11 +17,10 @@ namespace output {
     {
         std::vector<json::Node> responses;
     };
-
-
     StatResponse ReadStatRequests(const json::Document& doc,
-                              const transport::TransportCatalogue& catalogue,
-                              const render::MapRenderer& renderer);
+                                  const transport::TransportCatalogue& catalogue,
+                                  const render::MapRenderer& renderer,
+                                  const transport_router::TransportRouter& router);
 }// namespace output
 
 namespace render_config {
@@ -47,3 +47,6 @@ std::optional<T> GetIf(const json::Dict& dict, const std::string& key) {
     }, node.GetValue());
 }
 }// namespace render_config
+namespace routing_config {
+  transport_router::RoutingSettings ParseRoutingSettings(const json::Dict& settings_json);
+} // namespace routing_config

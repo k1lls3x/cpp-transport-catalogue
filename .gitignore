@@ -2,3 +2,5 @@
 .exe
 /vscode
 .vscode
+"transport-catalogue/eval \"$(ssh-agent -s)\""
+        "transport-catalogue/eval \"$(ssh-agent -s)\".pub"

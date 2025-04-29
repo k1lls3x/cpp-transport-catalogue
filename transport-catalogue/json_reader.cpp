@@ -1,5 +1,5 @@
 #include "json_reader.h"
-
+// json_reader.cpp
 #include <iostream>
 #include <sstream>
 using namespace std::literals;
@@ -80,11 +80,13 @@ namespace input {
         }
 
         // Расширяем маршрут назад для некольцевого
+        // Расширяем маршрут назад для некольцевого
         if (!is_roundtrip && stops.size() > 1) {
-            for (int i = static_cast<int>(stops.size()) - 2; i >= 0; --i) {
-                stops.push_back(stops[i]);
-            }
-        }
+          const size_t n = stops.size();          // исходное количество остановок
+          for (size_t k = 1; k < n; ++k) {        // добавляем ровно n-1 элементов
+              stops.push_back(stops[n - 1 - k]);
+          }
+      }
 
         temp_buses.emplace_back(bus_name, std::move(stops), is_roundtrip);
     }
@@ -104,13 +106,9 @@ namespace input {
     }
       return catalogue;
 }
-
-
 } // namespace input
-
 namespace render_config
 {
-
     svg::Color ParseColor(const json::Node& node){
 
         if (node.IsString()) {
@@ -137,7 +135,6 @@ namespace render_config
 
     render::RenderSettings ParseRenderSettings(const json::Dict& settings_json){
         render::RenderSettings settings;
-
         if (auto val = GetIf<double>(settings_json, "width")) settings.width = *val;
         if (auto val = GetIf<double>(settings_json, "height")) settings.height = *val;
         if (auto val = GetIf<double>(settings_json, "padding")) settings.padding = *val;
@@ -175,128 +172,202 @@ namespace render_config
                 settings.color_palette.push_back(ParseColor(node));
             }
         }
-
     return settings;
-
     }
 } // namespace render_config
 
 namespace output {
 
-  StatResponse ReadStatRequests(const json::Document& doc, const transport::TransportCatalogue& catalogue, const render::MapRenderer& renderer) {
-      const auto& root = doc.GetRoot().AsDict();
-      json::Array responses;
+StatResponse ReadStatRequests(const json::Document& doc,
+                              const transport::TransportCatalogue& catalogue,
+                              const render::MapRenderer& renderer,
+                              const transport_router::TransportRouter& router) {
+    const auto& root = doc.GetRoot().AsDict();
+    json::Array responses;
 
-      auto stat_requests_it = root.find("stat_requests");
-      if (stat_requests_it == root.end() || !stat_requests_it->second.IsArray()) {
-          return StatResponse{std::move(responses)};
-      }
+    auto stat_requests_it = root.find("stat_requests");
+    if (stat_requests_it == root.end() || !stat_requests_it->second.IsArray()) {
+        return StatResponse{std::move(responses)};
+    }
 
-      for (const auto& request : stat_requests_it->second.AsArray()) {
-          const auto& obj = request.AsDict();
+    for (const auto& request : stat_requests_it->second.AsArray()) {
+        const auto& obj = request.AsDict();
 
-          auto id_it = obj.find("id");
-          if (id_it == obj.end() || !id_it->second.IsInt()) {
-              continue;
-          }
-          int request_id = id_it->second.AsInt();
+        auto id_it = obj.find("id");
+        if (id_it == obj.end() || !id_it->second.IsInt()) {
+            continue;
+        }
+        int request_id = id_it->second.AsInt();
 
-          auto type_it = obj.find("type");
-          if (type_it == obj.end() || !type_it->second.IsString()) {
-              continue;
-          }
-          const std::string& type = type_it->second.AsString();
+        auto type_it = obj.find("type");
+        if (type_it == obj.end() || !type_it->second.IsString()) {
+            continue;
+        }
+        const std::string& type = type_it->second.AsString();
 
-          if (type == "Bus") {
-              auto name_it = obj.find("name");
-              if (name_it == obj.end() || !name_it->second.IsString()) {
-                  continue;
-              }
-              const std::string& bus_name = name_it->second.AsString();
-              auto bus_info = catalogue.GetBusInfo(bus_name);
+        if (type == "Bus") {
+            auto name_it = obj.find("name");
+            if (name_it == obj.end() || !name_it->second.IsString()) {
+                continue;
+            }
+            const std::string& bus_name = name_it->second.AsString();
+            auto bus_info = catalogue.GetBusInfo(bus_name);
 
-              if (!bus_info.exists) {
-                  responses.push_back(
-                      json::Builder{}
-                          .StartDict()
-                              .Key("request_id").Value(request_id)
-                              .Key("error_message").Value("not found")
-                          .EndDict()
-                          .Build()
-                  );
-              } else {
-                  responses.push_back(
-                      json::Builder{}
-                          .StartDict()
-                              .Key("request_id").Value(request_id)
-                              .Key("stop_count").Value(bus_info.total_stops)
-                              .Key("unique_stop_count").Value(bus_info.unique_stops)
-                              .Key("route_length").Value(bus_info.route_length)
-                              .Key("curvature").Value(bus_info.curvature)
-                          .EndDict()
-                          .Build()
-                  );
-              }
+            if (!bus_info.exists) {
+                responses.push_back(
+                    json::Builder{}
+                        .StartDict()
+                            .Key("request_id").Value(request_id)
+                            .Key("error_message").Value("not found")
+                        .EndDict()
+                        .Build()
+                );
+            } else {
+                responses.push_back(
+                    json::Builder{}
+                        .StartDict()
+                            .Key("request_id").Value(request_id)
+                            .Key("stop_count").Value(bus_info.total_stops)
+                            .Key("unique_stop_count").Value(bus_info.unique_stops)
+                            .Key("route_length").Value(bus_info.route_length)
+                            .Key("curvature").Value(bus_info.curvature)
+                        .EndDict()
+                        .Build()
+                );
+            }
 
-          } else if (type == "Stop") {
-              auto name_it = obj.find("name");
-              if (name_it == obj.end() || !name_it->second.IsString()) {
-                  continue;
-              }
-              const std::string& stop_name = name_it->second.AsString();
+        } else if (type == "Stop") {
+            auto name_it = obj.find("name");
+            if (name_it == obj.end() || !name_it->second.IsString()) {
+                continue;
+            }
+            const std::string& stop_name = name_it->second.AsString();
 
-              const transport::Stop* stop_ptr = catalogue.FindStop(stop_name);
-              if (!stop_ptr) {
-                  responses.push_back(
-                      json::Builder{}
-                          .StartDict()
-                              .Key("request_id").Value(request_id)
-                              .Key("error_message").Value("not found")
-                          .EndDict()
-                          .Build()
-                  );
-                  continue;
-              }
+            const transport::Stop* stop_ptr = catalogue.FindStop(stop_name);
+            if (!stop_ptr) {
+                responses.push_back(
+                    json::Builder{}
+                        .StartDict()
+                            .Key("request_id").Value(request_id)
+                            .Key("error_message").Value("not found")
+                        .EndDict()
+                        .Build()
+                );
+                continue;
+            }
 
-              auto buses_set = catalogue.GetBusesForStop(stop_name);
-              json::Builder builder;
-              auto array_ctx = builder
-                  .StartDict()
-                      .Key("request_id").Value(request_id)
-                      .Key("buses")
-                      .StartArray();
+            auto buses_set = catalogue.GetBusesForStop(stop_name);
+            json::Builder builder;
+            auto array_ctx = builder
+                .StartDict()
+                    .Key("request_id").Value(request_id)
+                    .Key("buses")
+                    .StartArray();
 
-              for (const auto& bus_name : buses_set) {
-                  array_ctx.Value(bus_name);
-              }
+            for (const auto& bus_name : buses_set) {
+                array_ctx.Value(bus_name);
+            }
 
-              responses.push_back(
-                  array_ctx
-                      .EndArray()
-                  .EndDict()
-                  .Build()
-              );
+            responses.push_back(
+                builder.EndArray().EndDict().Build()
+            );
 
-          } else if (type == "Map") {
-              std::ostringstream svg_stream;
-              svg::Document map = renderer.RenderMap(catalogue);
-              map.Render(svg_stream);
+        }else if (type == "Route") {
+          // находим остановки
+          const auto* from = catalogue.FindStop(obj.at("from").AsString());
+          const auto* to   = catalogue.FindStop(obj.at("to").AsString());
 
+          // если остановок нет — сразу not found
+          if (!from || !to) {
               responses.push_back(
                   json::Builder{}
                       .StartDict()
                           .Key("request_id").Value(request_id)
-                          .Key("map").Value(svg_stream.str())
+                          .Key("error_message").Value("not found")
                       .EndDict()
-                      .Build()
+                  .Build()
               );
+              continue;
           }
-      }
 
-      return StatResponse{std::move(responses)};
-  }
+          // строим маршрут
+          auto route = router.BuildRoute(from, to);
+          if (!route) {
+              responses.push_back(
+                  json::Builder{}
+                      .StartDict()
+                          .Key("request_id").Value(request_id)
+                          .Key("error_message").Value("not found")
+                      .EndDict()
+                  .Build()
+              );
+              continue;
+          }
+
+          // --- теперь собираем JSON ответа ---
+          json::Builder builder;
+
+          // 1) начинаем корневой dict
+          builder
+              .StartDict()
+                  .Key("request_id").Value(request_id)
+                  .Key("total_time").Value(route->total_time)
+                  // 2) открываем массив items
+                  .Key("items");
+          auto array_ctx = builder.StartArray();
+
+          // 3) пробегаем по каждому шагу маршрута
+          for (const auto& item : route->items) {
+              if (item.type == transport_router::RouteItem::Type::Wait) {
+                  array_ctx
+                      .StartDict()
+                          .Key("type").Value("Wait")
+                          .Key("stop_name").Value(item.name)
+                          .Key("time").Value(item.time)
+                      .EndDict();
+              } else {
+                  array_ctx
+                      .StartDict()
+                          .Key("type").Value("Bus")
+                          .Key("bus").Value(item.name)
+                          .Key("span_count").Value(item.span_count)
+                          .Key("time").Value(item.time)
+                      .EndDict();
+              }
+          }
+
+          // 4) закрываем массив и dict, строим Node и пушим в responses
+          responses.push_back(
+              array_ctx
+                  .EndArray()  // возвращает Builder&
+                  .EndDict()   // возвращает Builder&
+                  .Build()     // возвращает Node
+          );
+      } else if (type == "Map") {
+            std::ostringstream svg_stream;
+            svg::Document map = renderer.RenderMap(catalogue);
+            map.Render(svg_stream);
+
+            responses.push_back(
+                json::Builder{}
+                    .StartDict()
+                        .Key("request_id").Value(request_id)
+                        .Key("map").Value(svg_stream.str())
+                    .EndDict()
+                    .Build()
+            );
+        }
+    }
+
+    return StatResponse{std::move(responses)};
+}
 
   } // namespace output
-
+  transport_router::RoutingSettings routing_config::ParseRoutingSettings(const json::Dict& settings_json) {
+    transport_router::RoutingSettings settings;
+    settings.bus_wait_time = settings_json.at("bus_wait_time").AsInt();
+    settings.bus_velocity = settings_json.at("bus_velocity").AsDouble();
+    return settings;
+}
 
 

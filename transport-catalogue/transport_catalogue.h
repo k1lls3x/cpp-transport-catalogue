@@ -44,6 +44,7 @@ namespace transport {
         BusInfo GetBusInfo(std::string_view name) const;
         int GetDistance(const Stop* from , const Stop* to) const;
         std::deque<const Bus*> GetAllBuses() const;
+        std::deque<const Stop*> GetAllStops() const;
     private:
         std::deque<Stop> stops_;
         std::deque<Bus> buses_;

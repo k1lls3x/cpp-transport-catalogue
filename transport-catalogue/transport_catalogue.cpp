@@ -74,7 +74,13 @@ namespace transport {
         }
         return result;
     }
-
+    std::deque<const Stop*> TransportCatalogue::GetAllStops() const {
+      std::deque<const Stop*> result;
+      for (const auto& stop : stops_) {
+          result.push_back(&stop);
+      }
+      return result;
+  }
    const std::set<std::string>& TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {
         const Stop* stop = FindStop(stop_name);
         static const std::set<std::string> empty_result;
