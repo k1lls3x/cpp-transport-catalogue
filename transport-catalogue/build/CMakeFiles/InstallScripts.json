@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/mnt/k/spp/transport-catalogue/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

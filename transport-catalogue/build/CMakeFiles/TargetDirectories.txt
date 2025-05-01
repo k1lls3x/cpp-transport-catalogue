@@ -1,3 +1,0 @@
-/mnt/k/spp/transport-catalogue/build/CMakeFiles/transport_catalogue.dir
-/mnt/k/spp/transport-catalogue/build/CMakeFiles/edit_cache.dir
-/mnt/k/spp/transport-catalogue/build/CMakeFiles/rebuild_cache.dir
