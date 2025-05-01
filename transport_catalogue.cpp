@@ -67,21 +67,21 @@ namespace transport {
         info.exists = true;
         return info;
     }
-    std::deque<const Bus*> TransportCatalogue::GetAllBuses() const {
-        std::deque<const Bus*> result;
-        for (const Bus& bus : buses_) {
-            result.push_back(&bus);
-        }
-        return result;
-    }
-    std::deque<const Stop*> TransportCatalogue::GetAllStops() const {
-      std::deque<const Stop*> result;
-      for (const auto& stop : stops_) {
-          result.push_back(&stop);
+    const std::deque<const Bus*>& TransportCatalogue::GetAllBuses() const {
+      all_buses_.clear();
+      for (const Bus& bus : buses_) {
+          all_buses_.push_back(&bus);
       }
-      return result;
+      return all_buses_;
+    }
+    const std::deque<const Stop*>& TransportCatalogue::GetAllStops() const {
+      all_stops_.clear();
+      for (const auto& stop : stops_) {
+          all_stops_.push_back(&stop);
+      }
+      return all_stops_;
   }
-   const std::set<std::string>& TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {
+  const std::set<std::string>& TransportCatalogue::GetBusesForStop(std::string_view stop_name) const {
         const Stop* stop = FindStop(stop_name);
         static const std::set<std::string> empty_result;
         if (!stop) {

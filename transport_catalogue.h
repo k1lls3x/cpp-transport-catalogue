@@ -10,15 +10,18 @@
 #include <set>
 #include <stdexcept>
 namespace transport {
+
     struct Stop {
         std::string name;
         geo::Coordinates coordinates;
     };
+
     struct Bus {
         std::string name;
         std::vector<const Stop*> stops;
         bool is_roundtrip = false;
     };
+
     struct BusInfo {
         int total_stops = 0;
         int unique_stops = 0;
@@ -40,11 +43,11 @@ namespace transport {
         void SetDistance(const Stop* from, const Stop*  to, int distance);
         const Stop* FindStop(std::string_view name) const;
         const Bus* FindBus(std::string_view name) const;
-       const std::set<std::string>& GetBusesForStop(std::string_view stop_name) const ;
+        const std::set<std::string>& GetBusesForStop(std::string_view stop_name) const;
         BusInfo GetBusInfo(std::string_view name) const;
         int GetDistance(const Stop* from , const Stop* to) const;
-        std::deque<const Bus*> GetAllBuses() const;
-        std::deque<const Stop*> GetAllStops() const;
+        const std::deque<const Bus*>& GetAllBuses() const;
+        const std::deque<const Stop*>& GetAllStops() const;
     private:
         std::deque<Stop> stops_;
         std::deque<Bus> buses_;
@@ -52,5 +55,8 @@ namespace transport {
         std::unordered_map<std::string_view, const Bus*> bus_name_to_bus_;
         std::unordered_map<const Stop*,std::set<std::string>> stop_to_buses_;
         std::unordered_map<std::pair<const Stop*, const Stop*>,int , PairHash> distance_;
+
+        mutable std::deque<const Stop*> all_stops_;
+        mutable std::deque<const Bus*> all_buses_;
     };
 }

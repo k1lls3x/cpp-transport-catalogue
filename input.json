@@ -2,54 +2,59 @@
   "base_requests": [
       {
           "is_roundtrip": true,
-          "name": "289",
+          "name": "297",
           "stops": [
-              "Zagorye",
-              "Lipetskaya ulitsa 46",
-              "Lipetskaya ulitsa 40",
-              "Lipetskaya ulitsa 40",
-              "Lipetskaya ulitsa 46",
-              "Moskvorechye",
-              "Zagorye"
+              "Biryulyovo Zapadnoye",
+              "Biryulyovo Tovarnaya",
+              "Universam",
+              "Biryulyovo Zapadnoye"
           ],
           "type": "Bus"
       },
       {
-          "latitude": 55.579909,
-          "longitude": 37.68372,
-          "name": "Zagorye",
+          "is_roundtrip": false,
+          "name": "635",
+          "stops": [
+              "Biryulyovo Tovarnaya",
+              "Universam",
+              "Prazhskaya"
+          ],
+          "type": "Bus"
+      },
+      {
+          "latitude": 55.574371,
+          "longitude": 37.6517,
+          "name": "Biryulyovo Zapadnoye",
           "road_distances": {
-              "Lipetskaya ulitsa 46": 230
+              "Biryulyovo Tovarnaya": 2600
           },
           "type": "Stop"
       },
       {
-          "latitude": 55.581441,
-          "longitude": 37.682205,
-          "name": "Lipetskaya ulitsa 46",
+          "latitude": 55.587655,
+          "longitude": 37.645687,
+          "name": "Universam",
           "road_distances": {
-              "Lipetskaya ulitsa 40": 390,
-              "Moskvorechye": 12400
+              "Biryulyovo Tovarnaya": 1380,
+              "Biryulyovo Zapadnoye": 2500,
+              "Prazhskaya": 4650
           },
           "type": "Stop"
       },
       {
-          "latitude": 55.584496,
-          "longitude": 37.679133,
-          "name": "Lipetskaya ulitsa 40",
+          "latitude": 55.592028,
+          "longitude": 37.653656,
+          "name": "Biryulyovo Tovarnaya",
           "road_distances": {
-              "Lipetskaya ulitsa 40": 1090,
-              "Lipetskaya ulitsa 46": 380
+              "Universam": 890
           },
           "type": "Stop"
       },
       {
-          "latitude": 55.638433,
-          "longitude": 37.638433,
-          "name": "Moskvorechye",
-          "road_distances": {
-              "Zagorye": 10000
-          },
+          "latitude": 55.611717,
+          "longitude": 37.603938,
+          "name": "Prazhskaya",
+          "road_distances": {},
           "type": "Stop"
       }
   ],
@@ -87,31 +92,35 @@
       "width": 200
   },
   "routing_settings": {
-      "bus_velocity": 30,
-      "bus_wait_time": 2
+      "bus_velocity": 40,
+      "bus_wait_time": 6
   },
   "stat_requests": [
       {
           "id": 1,
-          "name": "289",
+          "name": "297",
           "type": "Bus"
       },
       {
-          "from": "Zagorye",
           "id": 2,
-          "to": "Moskvorechye",
-          "type": "Route"
+          "name": "635",
+          "type": "Bus"
       },
       {
-          "from": "Moskvorechye",
           "id": 3,
-          "to": "Zagorye",
+          "name": "Universam",
+          "type": "Stop"
+      },
+      {
+          "from": "Biryulyovo Zapadnoye",
+          "id": 4,
+          "to": "Universam",
           "type": "Route"
       },
       {
-          "from": "Lipetskaya ulitsa 40",
-          "id": 4,
-          "to": "Lipetskaya ulitsa 40",
+          "from": "Biryulyovo Zapadnoye",
+          "id": 5,
+          "to": "Prazhskaya",
           "type": "Route"
       }
   ]
