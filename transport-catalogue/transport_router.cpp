@@ -51,63 +51,65 @@ namespace transport_router {
 
        return route_info;
   }
+  void TransportRouter::AddWaitEdges(int stop_count) {
+    for (const auto& [stop, arrival] : stop_to_vertex_id_) {
+        const graph::VertexId dep = arrival + stop_count;
+        graph_.AddEdge({arrival, dep, static_cast<double>(settings_.bus_wait_time)});
+        edges_info_.push_back({EdgeInfo::Type::Wait, stop->name, 0});
+    }
+}
+void TransportRouter::AddBusEdges(const std::vector<const transport::Stop*>& stops, const std::string& bus_name, bool forward, int stop_count) {
+  int n = static_cast<int>(stops.size());
+  if (forward) {
+      for (int i = 0; i < n - 1; ++i) {
+          double dist_sum = 0.0;
+          for (int j = i + 1, span = 1; j < n; ++j, ++span) {
+              dist_sum += catalogue_.GetDistance(stops[j - 1], stops[j]);
+              graph_.AddEdge({
+                  stop_to_vertex_id_[stops[i]] + stop_count,
+                  stop_to_vertex_id_[stops[j]],
+                  ConvertDistanceToTime(dist_sum)
+              });
+              edges_info_.push_back({EdgeInfo::Type::Bus, bus_name, span});
+          }
+      }
+  } else {
+      for (int i = n - 1; i > 0; --i) {
+          double dist_sum = 0.0;
+          for (int j = i - 1, span = 1; j >= 0; --j, ++span) {
+              dist_sum += catalogue_.GetDistance(stops[j + 1], stops[j]);
+              graph_.AddEdge({
+                  stop_to_vertex_id_[stops[i]] + stop_count,
+                  stop_to_vertex_id_[stops[j]],
+                  ConvertDistanceToTime(dist_sum)
+              });
+              edges_info_.push_back({EdgeInfo::Type::Bus, bus_name, span});
+          }
+      }
+  }
+}
   void TransportRouter::BuildGraph() {
-     // 0. Пронумеровали остановки: каждая остановка получит свой индекс arrival
+      // 0. Пронумеровали остановки
     int stop_count = 0;
     for (const auto* stop : catalogue_.GetAllStops()) {
-       stop_to_vertex_id_[stop] = stop_count++;
-   }
-    // Построим граф на 2 * stop_count вершинах: [0..stop_count-1] — arrival,
-    // [stop_count..2*stop_count-1] — departure
+        stop_to_vertex_id_[stop] = stop_count++;
+    }
+
+    // 1. Инициализируем граф
     graph_ = graph::DirectedWeightedGraph<double>(stop_count * 2);
-   // 1. Рёбра «Wait»: обязательно из arrival → departure, вес = bus_wait_time
-    for (const auto& [stop, arrival] : stop_to_vertex_id_) {
-          const graph::VertexId dep = arrival + stop_count;
-          graph_.AddEdge({arrival, dep, static_cast<double>(settings_.bus_wait_time)});
-          edges_info_.push_back({EdgeInfo::Type::Wait, stop->name, 0});
-      }
 
-    // λ-функция для перевода метров -> минут
-    const auto dist_to_time = [&](double m) {
-        return m / (settings_.bus_velocity * 1000.0 / 60.0);
-    };
+    // 2. Добавим рёбра ожидания (Wait)
+    AddWaitEdges(stop_count);
 
-    // 2. Рёбра «Bus»
+    // 3. Добавим рёбра движения по автобусам (Bus)
     for (const transport::Bus* bus : catalogue_.GetAllBuses()) {
         const auto& stops = bus->stops;
-        const int n = static_cast<int>(stops.size());
-        if (n < 2) continue;
+        if (stops.size() < 2) continue;
 
-        // ---- прямое направление ----
-        for (int i = 0; i < n - 1; ++i) {
-            double dist_sum = 0.0;
-            for (int j = i + 1, span = 1; j < n; ++j, ++span) {
-              dist_sum += catalogue_.GetDistance(stops[j - 1], stops[j]);
-                // из departure stops[i] → arrival stops[j]
-                graph_.AddEdge({
-                    stop_to_vertex_id_[stops[i]] + stop_count,
-                    stop_to_vertex_id_[stops[j]],
-                    dist_to_time(dist_sum)
-                });
-                edges_info_.push_back({EdgeInfo::Type::Bus, bus->name, span});
-            }
-        }
-
-        // ---- обратное направление для некольцевого ----
+        const std::string& bus_name = bus->name;
+        AddBusEdges(stops, bus_name, true, stop_count);
         if (!bus->is_roundtrip) {
-            for (int i = n - 1; i > 0; --i) {
-                double dist_sum = 0.0;
-                for (int j = i - 1, span = 1; j >= 0; --j, ++span) {
-                  dist_sum += catalogue_.GetDistance(stops[j + 1], stops[j]);
-                                      // из departure stops[i] → arrival stops[j]
-                 graph_.AddEdge({
-                                stop_to_vertex_id_[stops[i]] + stop_count,
-                                stop_to_vertex_id_[stops[j]],
-                                dist_to_time(dist_sum)
-                                });
-                edges_info_.push_back({EdgeInfo::Type::Bus, bus->name, span});
-                }
-            }
+            AddBusEdges(stops, bus_name, false, stop_count);
         }
     }
 }

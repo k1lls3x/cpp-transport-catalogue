@@ -265,7 +265,7 @@ StatResponse ReadStatRequests(const json::Document& doc,
                     .StartArray();
 
             for (const auto& bus_name : buses_set) {
-                array_ctx.Value(bus_name);
+                array_ctx.Value(std::string(bus_name));
             }
 
             responses.push_back(
