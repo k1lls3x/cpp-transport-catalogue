@@ -40,9 +40,13 @@ struct RouteInfo {
   public:
     TransportRouter( const transport::TransportCatalogue& catalogue,
                      const RoutingSettings& settings);
-    std::optional<RouteInfo> BuildRoute(const transport::Stop* from, const transport::Stop* to) const;
-  private:
+    std::optional<RouteInfo> GetOptimalRoute(const transport::Stop* from, const transport::Stop* to) const;
+
+    private:
     void BuildGraph();
+    void AddBusSpanEdges(int start, int end, int step,
+      const std::vector<const transport::Stop*>& stops,
+      const std::string& bus_name, int stop_count, bool forward);
     void AddBusEdges(const std::vector<const transport::Stop*>& stops, const std::string& bus_name, bool forward, int stop_count);
     void AddWaitEdges(int stop_count);
 
