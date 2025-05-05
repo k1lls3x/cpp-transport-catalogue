@@ -40,14 +40,20 @@ struct RouteInfo {
   public:
     TransportRouter( const transport::TransportCatalogue& catalogue,
                      const RoutingSettings& settings);
-    std::optional<RouteInfo> BuildRoute(const transport::Stop* from, const transport::Stop* to) const;
-  private:
+    std::optional<RouteInfo> GetOptimalRoute(const transport::Stop* from, const transport::Stop* to) const;
+
+    private:
     void BuildGraph();
+    void AddBusSpanEdges(int start, int end, int step,
+      const std::vector<const transport::Stop*>& stops,
+      const std::string& bus_name, int stop_count, bool forward);
     void AddBusEdges(const std::vector<const transport::Stop*>& stops, const std::string& bus_name, bool forward, int stop_count);
     void AddWaitEdges(int stop_count);
+
     double ConvertDistanceToTime(double distance_meters) const {
       return distance_meters / (settings_.bus_velocity * 1000.0 / 60.0);
     }
+
     const transport::TransportCatalogue& catalogue_;
     RoutingSettings settings_;
     graph::DirectedWeightedGraph<double> graph_;

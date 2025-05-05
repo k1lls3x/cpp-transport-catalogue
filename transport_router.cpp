@@ -7,7 +7,7 @@ namespace transport_router {
   BuildGraph();
   router_ = std::make_unique<graph::Router<double>>(graph_);
   }
-  std::optional<RouteInfo> TransportRouter:: BuildRoute(const transport::Stop* from, const transport::Stop* to) const {
+  std::optional<RouteInfo> TransportRouter:: GetOptimalRoute(const transport::Stop* from, const transport::Stop* to) const {
        // 1. Найти вершины по остановкам
        auto it_from = stop_to_vertex_id_.find(from);
        auto it_to = stop_to_vertex_id_.find(to);
@@ -60,32 +60,37 @@ namespace transport_router {
 }
 void TransportRouter::AddBusEdges(const std::vector<const transport::Stop*>& stops, const std::string& bus_name, bool forward, int stop_count) {
   int n = static_cast<int>(stops.size());
+
   if (forward) {
       for (int i = 0; i < n - 1; ++i) {
-          double dist_sum = 0.0;
-          for (int j = i + 1, span = 1; j < n; ++j, ++span) {
-              dist_sum += catalogue_.GetDistance(stops[j - 1], stops[j]);
-              graph_.AddEdge({
-                  stop_to_vertex_id_[stops[i]] + stop_count,
-                  stop_to_vertex_id_[stops[j]],
-                  ConvertDistanceToTime(dist_sum)
-              });
-              edges_info_.push_back({EdgeInfo::Type::Bus, bus_name, span});
-          }
+          AddBusSpanEdges(i, n, 1, stops, bus_name, stop_count, true);
       }
   } else {
       for (int i = n - 1; i > 0; --i) {
-          double dist_sum = 0.0;
-          for (int j = i - 1, span = 1; j >= 0; --j, ++span) {
-              dist_sum += catalogue_.GetDistance(stops[j + 1], stops[j]);
-              graph_.AddEdge({
-                  stop_to_vertex_id_[stops[i]] + stop_count,
-                  stop_to_vertex_id_[stops[j]],
-                  ConvertDistanceToTime(dist_sum)
-              });
-              edges_info_.push_back({EdgeInfo::Type::Bus, bus_name, span});
-          }
+          AddBusSpanEdges(i, -1, -1, stops, bus_name, stop_count, false);
       }
+  }
+}
+
+void TransportRouter::AddBusSpanEdges(int start, int end, int step,
+  const std::vector<const transport::Stop*>& stops,
+  const std::string& bus_name, int stop_count, bool forward) {
+
+  double dist_sum = 0.0;
+  int span = 1;
+
+  for (int j = start + step; j != end; j += step, ++span) {
+      dist_sum += forward
+          ? catalogue_.GetDistance(stops[j - 1], stops[j])
+          : catalogue_.GetDistance(stops[j + 1], stops[j]);
+
+      graph_.AddEdge({
+          stop_to_vertex_id_[stops[start]] + stop_count,
+          stop_to_vertex_id_[stops[j]],
+          ConvertDistanceToTime(dist_sum)
+      });
+
+      edges_info_.push_back({EdgeInfo::Type::Bus, bus_name, span});
   }
 }
   void TransportRouter::BuildGraph() {

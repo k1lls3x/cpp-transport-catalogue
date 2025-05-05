@@ -291,7 +291,7 @@ StatResponse ReadStatRequests(const json::Document& doc,
           }
 
           // строим маршрут
-          auto route = router.BuildRoute(from, to);
+          auto route = router.GetOptimalRoute(from, to);
           if (!route) {
               responses.push_back(
                   json::Builder{}
